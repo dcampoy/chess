@@ -120,6 +120,27 @@ export class State {
       }
     }
 
+    if (piece === "♞" || piece === "♘") {
+      const potentialMoves: Position[] = [
+        { x: from.x - 1, y: from.y - 2 },
+        { x: from.x + 1, y: from.y - 2 },
+        { x: from.x - 1, y: from.y + 2 },
+        { x: from.x + 1, y: from.y + 2 },
+
+        { x: from.x - 2, y: from.y - 1 },
+        { x: from.x + 2, y: from.y - 1 },
+        { x: from.x - 2, y: from.y + 1 },
+        { x: from.x + 2, y: from.y + 1 },
+      ];
+
+      const validMoves = potentialMoves.map((pos) => {
+        const piece = this.pieceAt(pos);
+        return !piece || this.isEnemy(piece) ? pos : null;
+      });
+
+      return validMoves.filter((p): p is Position => p !== null);
+    }
+
     return moves;
   }
 }
