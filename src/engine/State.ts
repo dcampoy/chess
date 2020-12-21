@@ -51,37 +51,22 @@ export class State {
       return moves;
     }
 
-    if (piece === "♙") {
-      if (!this.pieceAt({ x: from.x, y: from.y - 1 })) {
-        moves.push({ x: from.x, y: from.y - 1 });
-      }
-      if (from.y === 6) {
-        if (this.pieceAt({ x: from.x, y: from.y - 2 }) === "") {
-          moves.push({ x: from.x, y: from.y - 2 });
-        }
-      }
-      if (this.isEnemy(this.pieceAt({ x: from.x - 1, y: from.y - 1 }))) {
-        moves.push({ x: from.x - 1, y: from.y - 1 });
-      }
-      if (this.isEnemy(this.pieceAt({ x: from.x + 1, y: from.y - 1 }))) {
-        moves.push({ x: from.x + 1, y: from.y - 1 });
-      }
-    }
+    if (piece === "♟︎" || piece === "♙") {
+      const dir = piece === "♟︎" ? 1 : -1;
 
-    if (piece === "♟︎") {
-      if (!this.pieceAt({ x: from.x, y: from.y + 1 })) {
-        moves.push({ x: from.x, y: from.y + 1 });
+      if (!this.pieceAt({ x: from.x, y: from.y + dir })) {
+        moves.push({ x: from.x, y: from.y + dir });
       }
-      if (from.y === 1) {
-        if (this.pieceAt({ x: from.x, y: from.y + 2 }) === "") {
-          moves.push({ x: from.x, y: from.y + 2 });
+      if ((piece === "♟︎" && from.y === 1) || (piece === "♙" && from.y === 6)) {
+        if (this.pieceAt({ x: from.x, y: from.y + 2 * dir }) === "") {
+          moves.push({ x: from.x, y: from.y + 2 * dir });
         }
       }
-      if (this.isEnemy(this.pieceAt({ x: from.x - 1, y: from.y + 1 }))) {
-        moves.push({ x: from.x - 1, y: from.y + 1 });
+      if (this.isEnemy(this.pieceAt({ x: from.x - 1, y: from.y + dir }))) {
+        moves.push({ x: from.x - 1, y: from.y + dir });
       }
-      if (this.isEnemy(this.pieceAt({ x: from.x + 1, y: from.y + 1 }))) {
-        moves.push({ x: from.x + 1, y: from.y + 1 });
+      if (this.isEnemy(this.pieceAt({ x: from.x + 1, y: from.y + dir }))) {
+        moves.push({ x: from.x + 1, y: from.y + dir });
       }
     }
 
