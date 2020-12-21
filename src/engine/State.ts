@@ -84,6 +84,57 @@ export class State {
         moves.push({ x: from.x + 1, y: from.y + 1 });
       }
     }
+
+    if (piece === "♜" || piece === "♖") {
+      // To left
+      for (let x = from.x - 1; x >= 0; x--) {
+        if (!this.pieceAt({ x, y: from.y })) {
+          moves.push({ x, y: from.y });
+        } else if (this.isEnemy(this.pieceAt({ x, y: from.y }))) {
+          moves.push({ x, y: from.y });
+          break;
+        } else {
+          break;
+        }
+      }
+
+      // To top
+      for (let y = from.y - 1; y >= 0; y--) {
+        if (!this.pieceAt({ x: from.x, y })) {
+          moves.push({ x: from.x, y });
+        } else if (this.isEnemy(this.pieceAt({ x: from.x, y }))) {
+          moves.push({ x: from.x, y });
+          break;
+        } else {
+          break;
+        }
+      }
+
+      // To right
+      for (let x = from.x + 1; x <= 7; x++) {
+        if (!this.pieceAt({ x, y: from.y })) {
+          moves.push({ x, y: from.y });
+        } else if (this.isEnemy(this.pieceAt({ x, y: from.y }))) {
+          moves.push({ x, y: from.y });
+          break;
+        } else {
+          break;
+        }
+      }
+
+      // To down
+      for (let y = from.y + 1; y <= 7; y++) {
+        if (!this.pieceAt({ x: from.x, y })) {
+          moves.push({ x: from.x, y });
+        } else if (this.isEnemy(this.pieceAt({ x: from.x, y }))) {
+          moves.push({ x: from.x, y });
+          break;
+        } else {
+          break;
+        }
+      }
+    }
+
     return moves;
   }
 }
