@@ -447,4 +447,35 @@ export class State {
           allowKingDefenceless || !this.move(from, to).canCaptureEnemyKing()
       );
   }
+
+  score() {
+    const capablanca: { [key: string]: number } = {
+      "♟︎": 1,
+      "♜": 5,
+      "♞": 3,
+      "♝": 3,
+      "♛": 9,
+      "♙": 1,
+      "♖": 5,
+      "♘": 3,
+      "♗": 3,
+      "♕": 9,
+    };
+
+    if (this.inStalemate()) {
+      return 0;
+    }
+
+    if (this.inCheckmate()) {
+      return -1000;
+    }
+
+    const score = this.board.reduce((acc, piece) => {
+      const value = capablanca[piece] || 0;
+      acc += this.isEnemy(piece) ? -value : value;
+      return acc;
+    }, 0);
+
+    return score;
+  }
 }

@@ -36,6 +36,8 @@ function Board() {
   const inCheckmate = inCheck && state.inCheckmate();
   const inStalemate = state.inStalemate();
 
+  const score = state.score();
+
   const handleSelect = (pos: Position) => {
     if (!selected && state.validMoves(pos, false).length > 0) {
       setSelected(pos);
@@ -91,13 +93,16 @@ function Board() {
           width: 640,
         }}
       >
-        {inCheckmate
-          ? "Checkmate"
-          : inCheck
-          ? "Check"
-          : inStalemate
-          ? "Stalemate"
-          : ""}
+        <p>
+          {inCheckmate
+            ? "Checkmate"
+            : inCheck
+            ? "Check"
+            : inStalemate
+            ? "Stalemate"
+            : ""}
+        </p>
+        <p>Score: {score}</p>
       </div>
     </>
   );
