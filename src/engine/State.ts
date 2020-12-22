@@ -19,7 +19,7 @@ export class State {
     return this.board[pos.y * 8 + pos.x];
   }
 
-  render(): (Piece | "")[][] {
+  toMatrix(): (Piece | "")[][] {
     const rows = [];
     for (let i = 0; i < 64; i += 8) {
       rows.push(this.board.slice(i, i + 8));
@@ -41,6 +41,56 @@ export class State {
     }
     const enemyPieces = this.turn === "black" ? whitePieces : blackPieces;
     return (enemyPieces as readonly string[]).includes(piece);
+  }
+
+  find(predicate: (pos: Position) => boolean) {
+    for (let x = 0; x < 8; x++) {
+      for (let y = 0; y < 8; y++) {
+        if (predicate({ x, y })) return { x, y };
+      }
+    }
+  }
+
+  canCaptureEnemyKing() {
+    const kingPiece = this.turn === "black" ? "♔" : "♚";
+    const kingPos = this.find(
+      (pos) => this.pieceAt(pos) === kingPiece
+    ) as Position;
+
+    return (
+      this.allPossibleMoves().find(
+        ({ to }) => to.x === kingPos.x && to.y === kingPos.y
+      ) !== undefined
+    );
+  }
+
+  allPossibleMoves() {
+    return this.board.reduce((acc, piece, indexedPos) => {
+      if (piece === "" || this.isEnemy(piece)) return acc;
+      const x = indexedPos % 8;
+      const y = (indexedPos - x) / 8;
+      acc = [
+        ...acc,
+        ...this.validMoves({ x, y }).map((to) => ({ from: { x, y }, to })),
+      ];
+      return acc;
+    }, [] as { from: Position; to: Position }[]);
+  }
+
+  inCheck() {
+    const hypotheticalNoMove = new State(
+      this.board,
+      this.turn === "black" ? "white" : "black"
+    );
+    return hypotheticalNoMove.canCaptureEnemyKing();
+  }
+
+  inCheckmate() {
+    return (
+      this.allPossibleMoves().find(
+        ({ from, to }) => !this.move(from, to).canCaptureEnemyKing()
+      ) === undefined
+    );
   }
 
   validMoves(from: Position): Position[] {
@@ -225,9 +275,11 @@ export class State {
           moves.push({ x, y });
         }
       }
-      console.log({ king: moves });
     }
 
-    return moves;
+    // Filter moves out of the board
+    return moves.filter(
+      (pos) => pos.x >= 0 && pos.x <= 7 && pos.y >= 0 && pos.y <= 7
+    );
   }
 }
