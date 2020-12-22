@@ -141,6 +141,93 @@ export class State {
       return validMoves.filter((p): p is Position => p !== null);
     }
 
+    if (piece === "♝" || piece === "♗") {
+      // prettier-ignore
+      const vectors = [
+        [-1, -1],
+        [ 1, -1], 
+        [-1,  1],
+        [ 1,  1]
+      ]
+
+      for (let vector of vectors) {
+        for (
+          let x = from.x + vector[0], y = from.y + vector[1];
+          x >= 0 && x <= 7 && y >= 0 && y <= 7;
+          x += vector[0], y += vector[1]
+        ) {
+          const piece = this.pieceAt({ x, y });
+          if (!piece) {
+            moves.push({ x, y });
+          } else if (this.isEnemy(piece)) {
+            moves.push({ x, y });
+            break;
+          } else {
+            break;
+          }
+        }
+      }
+    }
+
+    if (piece === "♛" || piece === "♕") {
+      // prettier-ignore
+      const vectors = [
+        [-1, -1],
+        [-1,  0],
+        [-1,  1],
+        [ 0, -1],
+        [ 0,  1],
+        [ 1, -1], 
+        [ 1,  0], 
+        [ 1,  1]
+      ]
+
+      for (let vector of vectors) {
+        for (
+          let x = from.x + vector[0], y = from.y + vector[1];
+          x >= 0 && x <= 7 && y >= 0 && y <= 7;
+          x += vector[0], y += vector[1]
+        ) {
+          const piece = this.pieceAt({ x, y });
+          if (!piece) {
+            moves.push({ x, y });
+          } else if (this.isEnemy(piece)) {
+            moves.push({ x, y });
+            break;
+          } else {
+            break;
+          }
+        }
+      }
+    }
+
+    if (piece === "♚" || piece === "♔") {
+      // prettier-ignore
+      const vectors = [
+        [-1, -1],
+        [-1,  0],
+        [-1,  1],
+        [ 0, -1],
+        [ 0,  1],
+        [ 1, -1], 
+        [ 1,  0], 
+        [ 1,  1]
+      ]
+
+      for (let vector of vectors) {
+        const x = from.x + vector[0];
+        const y = from.y + vector[1];
+        const piece = this.pieceAt({ x, y });
+
+        if (!piece) {
+          moves.push({ x, y });
+        } else if (this.isEnemy(piece)) {
+          moves.push({ x, y });
+        }
+      }
+      console.log({ king: moves });
+    }
+
     return moves;
   }
 }

@@ -3,15 +3,15 @@ import { Position, State } from "../engine/State";
 import Cell from "./Cell";
 
 // prettier-ignore
-const initialState = new State([  
-  "♜","♞","","","","","♞","♜",
+const initialState = new State([
+  "♜","♞","♝","♛","♚","♝","♞","♜",
   "♟︎","♟︎","♟︎","♟︎","♟︎","♟︎","♟︎","♟︎",
   "","","","","","","","",
-  "","","","","","","","",    
+  "","","","","","","","",
   "","","","","","","","",
   "","","","","","","","",
   "♙","♙","♙","♙","♙","♙","♙","♙",
-  "♖","♘","","","","","♘","♖",
+  "♖","♘","♗","♕","♔","♗","♘","♖",
 ], "white")
 
 function Board() {
@@ -50,6 +50,10 @@ function Board() {
     >
       {content.map((row, y) =>
         row.map((cellContent, x) => {
+          const isValidMove =
+            validMoves.find((m) => m.x === x && m.y === y) !== undefined;
+          const hasValidMove = state.validMoves({ x, y }).length > 0;
+          const selectable = selected ? isValidMove : hasValidMove;
           return (
             <Cell
               key={`${x} ${y}`}
@@ -57,11 +61,8 @@ function Board() {
               y={y}
               content={cellContent ? cellContent : null}
               selected={selected?.x === x && selected?.y === y}
-              selectable={
-                selected
-                  ? validMoves.find((m) => m.x === x && m.y === y) !== undefined
-                  : state.validMoves({ x, y }).length > 0
-              }
+              selectable={selectable}
+              validMove={isValidMove}
               onSelect={(x, y) => handleSelect({ x, y })}
             />
           );

@@ -1,6 +1,6 @@
 import { Piece } from "../engine/State";
 
-const backgroundColor = ["#795548", "#FFECB3"];
+const backgroundColor = ["#FFECB3", "#795548"];
 
 const pieceMap: { [K in Piece]: Piece } = {
   "♙": "♟︎",
@@ -21,15 +21,16 @@ function Cell({
   x,
   y,
   content,
-  selected,
   selectable,
   onSelect,
+  validMove,
 }: {
   x: number;
   y: number;
   content: Piece | null;
   selected: boolean;
   selectable: boolean;
+  validMove: boolean;
   onSelect: (x: number, y: number) => void;
 }) {
   function handleClick() {
@@ -42,6 +43,7 @@ function Cell({
   return (
     <div
       style={{
+        userSelect: "none",
         backgroundColor: backgroundColor[(x + y) % 2],
         justifyContent: "center",
         alignItems: "center",
@@ -55,7 +57,20 @@ function Cell({
       }}
       onClick={handleClick}
     >
-      {piece || (selectable ? "•" : "")}
+      {piece}
+      {validMove ? (
+        <span
+          style={{
+            color: "white",
+            textShadow: "0px 0px 5px #49342c",
+            position: "absolute",
+          }}
+        >
+          •
+        </span>
+      ) : (
+        ""
+      )}
     </div>
   );
 }
