@@ -13,7 +13,9 @@ export class State {
   constructor(
     public board: (Piece | "")[],
     public turn: "white" | "black",
-    public enPassant: Position | null
+    public enPassant: Position | null,
+    public rightCastlingPossible: boolean,
+    public leftCastlingPossible: boolean
   ) {}
 
   private pieceAt(pos: Position) {
@@ -74,9 +76,49 @@ export class State {
       board[to.y * 8 + to.x] = "♕";
     }
 
+    const castlingLine = this.turn === "black" ? 0 : 7;
+
+    if (
+      this.rightCastlingPossible &&
+      from.x === 4 &&
+      from.y === castlingLine &&
+      to.x === 6 &&
+      to.y === castlingLine
+    ) {
+      board[castlingLine * 8 + 5] = board[castlingLine * 8 + 7];
+      board[castlingLine * 8 + 7] = "";
+    }
+
+    if (
+      this.leftCastlingPossible &&
+      from.x === 4 &&
+      from.y === castlingLine &&
+      to.x === 2 &&
+      to.y === castlingLine
+    ) {
+      board[castlingLine * 8 + 3] = board[castlingLine * 8];
+      board[castlingLine * 8] = "";
+    }
+
+    const rightCastlingPossible =
+      this.rightCastlingPossible &&
+      !(from.x === 4 && from.y === castlingLine) &&
+      !(from.x === 7 && from.y === castlingLine);
+
+    const leftCastlingPossible =
+      this.rightCastlingPossible &&
+      !(from.x === 4 && from.y === castlingLine) &&
+      !(from.x === 0 && from.y === castlingLine);
+
     const turn = this.turn === "black" ? "white" : "black";
 
-    return new State(board, turn, enPassant);
+    return new State(
+      board,
+      turn,
+      enPassant,
+      rightCastlingPossible,
+      leftCastlingPossible
+    );
   }
 
   isEnemy(piece: Piece | "") {
@@ -95,17 +137,21 @@ export class State {
     }
   }
 
+  canAttackPosition(pos: Position) {
+    return (
+      this.allPossibleMoves().find(
+        ({ to }) => to.x === pos.x && to.y === pos.y
+      ) !== undefined
+    );
+  }
+
   canCaptureEnemyKing() {
     const kingPiece = this.turn === "black" ? "♔" : "♚";
     const kingPos = this.find(
       (pos) => this.pieceAt(pos) === kingPiece
     ) as Position;
 
-    return (
-      this.allPossibleMoves().find(
-        ({ to }) => to.x === kingPos.x && to.y === kingPos.y
-      ) !== undefined
-    );
+    return this.canAttackPosition(kingPos);
   }
 
   allPossibleMoves() {
@@ -125,7 +171,9 @@ export class State {
     const hypotheticalNoMove = new State(
       this.board,
       this.turn === "black" ? "white" : "black",
-      null
+      null,
+      this.rightCastlingPossible,
+      this.leftCastlingPossible
     );
     return hypotheticalNoMove.canCaptureEnemyKing();
   }
@@ -337,6 +385,44 @@ export class State {
         } else if (this.isEnemy(piece)) {
           moves.push({ x, y });
         }
+      }
+
+      const hypotheticalNoMove = new State(
+        this.board,
+        this.turn === "black" ? "white" : "black",
+        null,
+        this.rightCastlingPossible,
+        this.leftCastlingPossible
+      );
+
+      // Right castling
+      const castlingRow = piece === "♚" ? 0 : 7;
+      if (
+        this.rightCastlingPossible &&
+        from.x === 4 &&
+        from.y === castlingRow &&
+        this.pieceAt({ x: 5, y: castlingRow }) === "" &&
+        this.pieceAt({ x: 6, y: castlingRow }) === "" &&
+        !hypotheticalNoMove.canAttackPosition({ x: 4, y: castlingRow }) &&
+        !hypotheticalNoMove.canAttackPosition({ x: 5, y: castlingRow }) &&
+        !hypotheticalNoMove.canAttackPosition({ x: 6, y: castlingRow })
+      ) {
+        moves.push({ x: 6, y: castlingRow });
+      }
+
+      // Left castling
+      if (
+        this.leftCastlingPossible &&
+        from.x === 4 &&
+        from.y === castlingRow &&
+        this.pieceAt({ x: 1, y: castlingRow }) === "" &&
+        this.pieceAt({ x: 2, y: castlingRow }) === "" &&
+        this.pieceAt({ x: 3, y: castlingRow }) === "" &&
+        !hypotheticalNoMove.canAttackPosition({ x: 2, y: castlingRow }) &&
+        !hypotheticalNoMove.canAttackPosition({ x: 3, y: castlingRow }) &&
+        !hypotheticalNoMove.canAttackPosition({ x: 4, y: castlingRow })
+      ) {
+        moves.push({ x: 2, y: castlingRow });
       }
     }
 

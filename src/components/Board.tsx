@@ -12,7 +12,7 @@ const initialState = new State([
   "","","","","","","","",
   "♙","♙","♙","♙","♙","♙","♙","♙",
   "♖","♘","♗","♕","♔","♗","♘","♖",
-], "white", null)
+], "white", null, true, true)
 
 function Board() {
   const [state, setState] = useState<State>(initialState);
