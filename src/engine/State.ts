@@ -65,6 +65,15 @@ export class State {
       board[(to.y + 1) * 8 + to.x] = "";
     }
 
+    // Pawn to Queen
+    if (movedPiece === "♟︎" && to.y === 7) {
+      board[to.y * 8 + to.x] = "♛";
+    }
+
+    if (movedPiece === "♙" && to.y === 0) {
+      board[to.y * 8 + to.x] = "♕";
+    }
+
     const turn = this.turn === "black" ? "white" : "black";
 
     return new State(board, turn, enPassant);
