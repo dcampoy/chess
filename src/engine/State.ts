@@ -10,7 +10,11 @@ export const blackPieces = ["♟︎", "♜", "♞", "♝", "♛", "♚"] as cons
 export const whitePieces = ["♙", "♖", "♘", "♗", "♕", "♔"] as const;
 
 export class State {
-  constructor(public board: (Piece | "")[], public turn: "white" | "black") {}
+  constructor(
+    public board: (Piece | "")[],
+    public turn: "white" | "black",
+    public enPassant: Position | null
+  ) {}
 
   private pieceAt(pos: Position) {
     if (pos.x < 0 || pos.x > 7 || pos.y < 0 || pos.y > 7) {
@@ -28,11 +32,42 @@ export class State {
   }
 
   move(from: Position, to: Position): State {
+    const movedPiece = this.pieceAt(from);
+
+    // Detecting en-passant
+    let enPassant = null;
+    if (movedPiece === "♟︎" && from.y === 1 && to.y === 3) {
+      enPassant = { x: from.x, y: 2 };
+    }
+
+    if (movedPiece === "♙" && from.y === 6 && to.y === 4) {
+      enPassant = { x: from.x, y: 5 };
+    }
+
     const board = [...this.board];
+
     board[to.y * 8 + to.x] = board[from.y * 8 + from.x];
     board[from.y * 8 + from.x] = "";
+
+    // Executing en-passant
+    if (
+      movedPiece === "♟︎" &&
+      to.x === this.enPassant?.x &&
+      to.y === this.enPassant.y
+    ) {
+      board[(to.y - 1) * 8 + to.x] = "";
+    }
+    if (
+      movedPiece === "♙" &&
+      to.x === this.enPassant?.x &&
+      to.y === this.enPassant.y
+    ) {
+      board[(to.y + 1) * 8 + to.x] = "";
+    }
+
     const turn = this.turn === "black" ? "white" : "black";
-    return new State(board, turn);
+
+    return new State(board, turn, enPassant);
   }
 
   isEnemy(piece: Piece | "") {
@@ -80,7 +115,8 @@ export class State {
   inCheck() {
     const hypotheticalNoMove = new State(
       this.board,
-      this.turn === "black" ? "white" : "black"
+      this.turn === "black" ? "white" : "black",
+      null
     );
     return hypotheticalNoMove.canCaptureEnemyKing();
   }
@@ -117,6 +153,24 @@ export class State {
       }
       if (this.isEnemy(this.pieceAt({ x: from.x + 1, y: from.y + dir }))) {
         moves.push({ x: from.x + 1, y: from.y + dir });
+      }
+
+      if (
+        piece === "♟︎" &&
+        from.y === 5 &&
+        this.enPassant &&
+        (from.x === this.enPassant.x + 1 || from.x === this.enPassant.x - 1)
+      ) {
+        moves.push(this.enPassant);
+      }
+
+      if (
+        piece === "♙" &&
+        from.y === 3 &&
+        this.enPassant &&
+        (from.x === this.enPassant.x + 1 || from.x === this.enPassant.x - 1)
+      ) {
+        moves.push(this.enPassant);
       }
     }
 
