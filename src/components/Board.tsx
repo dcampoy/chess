@@ -3,16 +3,27 @@ import { Position, State } from "../engine/State";
 import Cell from "./Cell";
 
 // prettier-ignore
+// const initialState = new State([
+//   "♜","♞","♝","♛","♚","♝","♞","♜",
+//   "♟︎","♟︎","♟︎","♟︎","♟︎","♟︎","♟︎","♟︎",
+//   "","","","","","","","",
+//   "","","","","","","","",
+//   "","","","","","","","",
+//   "","","","","","","","",
+//   "♙","♙","♙","♙","♙","♙","♙","♙",
+//   "♖","♘","♗","♕","♔","♗","♘","♖",
+// ], "white", null, true, true)
+
 const initialState = new State([
-  "♜","♞","♝","♛","♚","♝","♞","♜",
-  "♟︎","♟︎","♟︎","♟︎","♟︎","♟︎","♟︎","♟︎",
+  "","","","","♚","","","",
+  "","","","","","","","",
+  "","","","","","♔","","",
   "","","","","","","","",
   "","","","","","","","",
   "","","","","","","","",
   "","","","","","","","",
-  "♙","♙","♙","♙","♙","♙","♙","♙",
-  "♖","♘","♗","♕","♔","♗","♘","♖",
-], "white", null, true, true)
+  "","","","♕","","","","",
+], "white", null, false, false)
 
 function Board() {
   const [state, setState] = useState<State>(initialState);
@@ -22,7 +33,8 @@ function Board() {
   const validMoves = selected ? state.validMoves(selected, false) : [];
 
   const inCheck = state.inCheck();
-  const inCheckMate = inCheck && state.inCheckmate();
+  const inCheckmate = inCheck && state.inCheckmate();
+  const inStalemate = state.inStalemate();
 
   const handleSelect = (pos: Position) => {
     if (!selected && state.validMoves(pos, false).length > 0) {
@@ -79,7 +91,13 @@ function Board() {
           width: 640,
         }}
       >
-        {inCheckMate ? "Checkmate" : inCheck ? "Check" : ""}
+        {inCheckmate
+          ? "Checkmate"
+          : inCheck
+          ? "Check"
+          : inStalemate
+          ? "Stalemate"
+          : ""}
       </div>
     </>
   );

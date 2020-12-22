@@ -183,6 +183,16 @@ export class State {
 
   inCheckmate() {
     return (
+      this.inCheck() &&
+      this.allPossibleMoves().find(
+        ({ from, to }) => !this.move(from, to).canCaptureEnemyKing()
+      ) === undefined
+    );
+  }
+
+  inStalemate() {
+    return (
+      !this.inCheck() &&
       this.allPossibleMoves().find(
         ({ from, to }) => !this.move(from, to).canCaptureEnemyKing()
       ) === undefined
