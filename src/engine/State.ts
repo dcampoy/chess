@@ -312,7 +312,9 @@ export class State {
         return !piece || this.isEnemy(piece) ? pos : null;
       });
 
-      return validMoves.filter((p): p is Position => p !== null);
+      validMoves.forEach((p) => {
+        if (p !== null) moves.push(p);
+      });
     }
 
     if (piece === "♝" || piece === "♗") {
