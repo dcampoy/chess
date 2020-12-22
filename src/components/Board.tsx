@@ -19,13 +19,13 @@ function Board() {
   const [selected, setSelected] = useState<Position | null>(null);
 
   const content = state.toMatrix();
-  const validMoves = selected ? state.validMoves(selected) : [];
+  const validMoves = selected ? state.validMoves(selected, false) : [];
 
   const inCheck = state.inCheck();
   const inCheckMate = inCheck && state.inCheckmate();
 
   const handleSelect = (pos: Position) => {
-    if (!selected && state.validMoves(pos).length > 0) {
+    if (!selected && state.validMoves(pos, false).length > 0) {
       setSelected(pos);
     } else if (
       selected &&
@@ -56,7 +56,7 @@ function Board() {
           row.map((cellContent, x) => {
             const isValidMove =
               validMoves.find((m) => m.x === x && m.y === y) !== undefined;
-            const hasValidMoves = state.validMoves({ x, y }).length > 0;
+            const hasValidMoves = state.validMoves({ x, y }, false).length > 0;
             const selectable = selected ? isValidMove : hasValidMoves;
             return (
               <Cell

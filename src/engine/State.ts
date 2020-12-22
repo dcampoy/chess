@@ -161,7 +161,10 @@ export class State {
       const y = (indexedPos - x) / 8;
       acc = [
         ...acc,
-        ...this.validMoves({ x, y }).map((to) => ({ from: { x, y }, to })),
+        ...this.validMoves({ x, y }, true).map((to) => ({
+          from: { x, y },
+          to,
+        })),
       ];
       return acc;
     }, [] as { from: Position; to: Position }[]);
@@ -186,7 +189,7 @@ export class State {
     );
   }
 
-  validMoves(from: Position): Position[] {
+  validMoves(from: Position, allowKingDefenceless: boolean): Position[] {
     const piece = this.pieceAt(from);
     const moves: Position[] = [];
 
@@ -427,8 +430,11 @@ export class State {
     }
 
     // Filter moves out of the board
-    return moves.filter(
-      (pos) => pos.x >= 0 && pos.x <= 7 && pos.y >= 0 && pos.y <= 7
-    );
+    return moves
+      .filter((to) => to.x >= 0 && to.x <= 7 && to.y >= 0 && to.y <= 7)
+      .filter(
+        (to) =>
+          allowKingDefenceless || !this.move(from, to).canCaptureEnemyKing()
+      );
   }
 }
