@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Engine from "../engine/Engine";
 import { Position, State } from "../engine/State";
 import Cell from "./Cell";
 
@@ -38,6 +39,9 @@ function Board() {
 
   const score = state.score();
 
+  const engine = new Engine(state);
+  const suggestedMove = engine.suggestMove();
+
   const handleSelect = (pos: Position) => {
     if (!selected && state.validMoves(pos, false).length > 0) {
       setSelected(pos);
@@ -72,6 +76,18 @@ function Board() {
               validMoves.find((m) => m.x === x && m.y === y) !== undefined;
             const hasValidMoves = state.validMoves({ x, y }, false).length > 0;
             const selectable = selected ? isValidMove : hasValidMoves;
+            const moveScore =
+              selected && isValidMove
+                ? engine.score({ ...selected }, { x, y })
+                : null;
+
+            const isSuggested = selected
+              ? suggestedMove?.from.x === selected.x &&
+                suggestedMove?.from.y === selected.y &&
+                x === suggestedMove.to.x &&
+                y === suggestedMove.to.y
+              : suggestedMove?.from.x === x && suggestedMove?.from.y === y;
+
             return (
               <Cell
                 key={`${x} ${y}`}
@@ -81,7 +97,9 @@ function Board() {
                 selected={selected?.x === x && selected?.y === y}
                 selectable={selectable}
                 validMove={isValidMove}
+                suggested={isSuggested}
                 onSelect={(x, y) => handleSelect({ x, y })}
+                label={moveScore?.toString() || ""}
               />
             );
           })

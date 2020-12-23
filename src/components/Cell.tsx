@@ -22,16 +22,20 @@ function Cell({
   y,
   content,
   selectable,
+  suggested,
   onSelect,
   validMove,
+  label,
 }: {
   x: number;
   y: number;
   content: Piece | null;
   selected: boolean;
   selectable: boolean;
+  suggested: boolean;
   validMove: boolean;
   onSelect: (x: number, y: number) => void;
+  label: string | null;
 }) {
   function handleClick() {
     onSelect(x, y);
@@ -43,6 +47,7 @@ function Cell({
   return (
     <div
       style={{
+        position: "relative",
         userSelect: "none",
         backgroundColor: backgroundColor[(x + y) % 2],
         justifyContent: "center",
@@ -58,7 +63,7 @@ function Cell({
       onClick={handleClick}
     >
       {piece}
-      {validMove ? (
+      {validMove || suggested ? (
         <span
           style={{
             color: "white",
@@ -66,10 +71,25 @@ function Cell({
             position: "absolute",
           }}
         >
-          •
+          {suggested ? "•" : "·"}
         </span>
       ) : (
         ""
+      )}
+      {label && (
+        <div
+          style={{
+            fontSize: 12,
+            color: "white",
+            textShadow: "none",
+            position: "absolute",
+            bottom: 10,
+            padding: "0.2em",
+            backgroundColor: "#0008",
+          }}
+        >
+          {label}
+        </div>
       )}
     </div>
   );
