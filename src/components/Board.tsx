@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Board as BoardState, initial } from "../engine/Board";
 import Engine from "../engine/Engine";
 import { Position, State } from "../engine/State";
 import Cell from "./Cell";
@@ -6,14 +7,14 @@ import Cell from "./Cell";
 // prettier-ignore
 const initialState = new State([
   "♜","♞","♝","♛","♚","♝","♞","♜",
-  "♟︎","♟︎","♟︎","♟︎","♟︎","♟︎","♟︎","♟︎",
+  "♟","♟","♟","♟","♟","♟","♟","♟",
   "","","","","","","","",
   "","","","","","","","",
   "","","","","","","","",
   "","","","","","","","",
   "♙","♙","♙","♙","♙","♙","♙","♙",
   "♖","♘","♗","♕","♔","♗","♘","♖",
-], "white", null, true, true)
+], new BoardState(initial),  "white", null, true, true)
 
 // const initialState = new State([
 //   "","","","","♚","","","",
@@ -74,7 +75,9 @@ function Board() {
           row.map((cellContent, x) => {
             const isValidMove =
               validMoves.find((m) => m.x === x && m.y === y) !== undefined;
-            const hasValidMoves = state.validMoves({ x, y }, false).length > 0;
+            const hasValidMoves = cellContent
+              ? state.validMoves({ x, y }, false).length > 0
+              : false;
             const selectable = selected ? isValidMove : hasValidMoves;
             const moveScore =
               selected && isValidMove

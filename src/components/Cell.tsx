@@ -3,13 +3,13 @@ import { Piece } from "../engine/State";
 const backgroundColor = ["#FFECB3", "#795548"];
 
 const pieceMap: { [K in Piece]: Piece } = {
-  "♙": "♟︎",
+  "♙": "♟",
   "♖": "♜",
   "♘": "♞",
   "♗": "♝",
   "♕": "♛",
   "♔": "♚",
-  "♟︎": "♟︎",
+  "♟": "♟",
   "♜": "♜",
   "♞": "♞",
   "♝": "♝",
