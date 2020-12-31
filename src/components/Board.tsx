@@ -1,58 +1,49 @@
 import React, { useState } from "react";
 import { Board as BoardState, initial } from "../engine/Board";
 import Engine from "../engine/Engine";
-import { Position, State } from "../engine/State";
+import { Move, Position, State } from "../engine/State";
 import Cell from "./Cell";
 
-// prettier-ignore
-const initialState = new State([
-  "♜","♞","♝","♛","♚","♝","♞","♜",
-  "♟","♟","♟","♟","♟","♟","♟","♟",
-  "","","","","","","","",
-  "","","","","","","","",
-  "","","","","","","","",
-  "","","","","","","","",
-  "♙","♙","♙","♙","♙","♙","♙","♙",
-  "♖","♘","♗","♕","♔","♗","♘","♖",
-], new BoardState(initial),  "white", null, true, true)
-
-// const initialState = new State([
-//   "","","","","♚","","","",
-//   "","","","","","","","",
-//   "","","","","","♔","","",
-//   "","","","","","","","",
-//   "","","","","","","","",
-//   "","","","","","","","",
-//   "","","","","","","","",
-//   "","","","♕","","","","",
-// ], "white", null, false, false)
+const initialState = new State(
+  new BoardState(initial),
+  "white",
+  null,
+  true,
+  true
+);
 
 function Board() {
   const [state, setState] = useState<State>(initialState);
   const [selected, setSelected] = useState<Position | null>(null);
 
-  const content = state.toMatrix();
-  const validMoves = selected ? state.validMoves(selected, false) : [];
+  const validMoves = selected ? state.validMoves(selected) : [];
 
   const inCheck = state.inCheck();
   const inCheckmate = inCheck && state.inCheckmate();
   const inStalemate = state.inStalemate();
 
+  const engine = new Engine(state);
   const score = state.score();
 
-  const engine = new Engine(state);
   const suggestedMove = engine.suggestMove();
 
+  const movePiece = (move: Move) => {
+    const newState = state.move(move.from, move.to);
+    setState(newState);
+    setSelected(null);
+  };
+
+  // A piece is selectable when it has at least one allowed move
+  const isSelectable = (pos: Position) => state.validMoves(pos).length > 0;
+
+  const isValidMove = (to: Position) =>
+    validMoves.find((m) => m.x === to.x && m.y === to.y) !== undefined;
+
   const handleSelect = (pos: Position) => {
-    if (!selected && state.validMoves(pos, false).length > 0) {
+    if (!selected && isSelectable(pos)) {
       setSelected(pos);
-    } else if (
-      selected &&
-      validMoves.find((m) => m.x === pos.x && m.y === pos.y)
-    ) {
-      const newState = state.move(selected, pos);
-      setState(newState);
-      setSelected(null);
+    } else if (selected && isValidMove(pos)) {
+      movePiece({ from: selected, to: pos });
     } else {
       setSelected(null);
     }
@@ -71,18 +62,17 @@ function Board() {
           border: "5px black solid",
         }}
       >
-        {content.map((row, y) =>
+        {state.toMatrix().map((row, y) =>
           row.map((cellContent, x) => {
-            const isValidMove =
-              validMoves.find((m) => m.x === x && m.y === y) !== undefined;
             const hasValidMoves = cellContent
-              ? state.validMoves({ x, y }, false).length > 0
+              ? state.validMoves({ x, y }).length > 0
               : false;
-            const selectable = selected ? isValidMove : hasValidMoves;
-            const moveScore =
-              selected && isValidMove
-                ? engine.score({ ...selected }, { x, y })
-                : null;
+
+            const selectable = selected ? isValidMove({ x, y }) : hasValidMoves;
+
+            const moveScore = selected
+              ? engine.score(selected, { x, y })
+              : null;
 
             const isSuggested = selected
               ? suggestedMove?.from.x === selected.x &&
@@ -99,7 +89,7 @@ function Board() {
                 content={cellContent ? cellContent : null}
                 selected={selected?.x === x && selected?.y === y}
                 selectable={selectable}
-                validMove={isValidMove}
+                validMove={isValidMove({ x, y })}
                 suggested={isSuggested}
                 onSelect={(x, y) => handleSelect({ x, y })}
                 label={moveScore?.toString() || ""}

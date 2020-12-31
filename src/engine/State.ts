@@ -18,7 +18,6 @@ export const whitePieces = ["♙", "♖", "♘", "♗", "♕", "♔"] as const;
 
 export class State {
   constructor(
-    public deprecatedBoard: (Piece | "")[],
     public board: Board,
     public turn: "white" | "black",
     public enPassant: Position | null,
@@ -35,11 +34,6 @@ export class State {
     return rows.map((row) => {
       return row.split("").map((p) => (p === " " ? "" : p)) as (Piece | "")[];
     });
-    // const rows = [];
-    // for (let i = 0; i < 64; i += 8) {
-    //   rows.push(this.deprecatedBoard.slice(i, i + 8));
-    // }
-    // return rows;
   }
 
   move(from: Position, to: Position): State {
@@ -135,7 +129,6 @@ export class State {
     const turn = this.turn === "black" ? "white" : "black";
 
     return new State(
-      this.deprecatedBoard,
       board,
       turn,
       enPassant,
@@ -162,8 +155,8 @@ export class State {
 
   canAttackPosition(pos: Position) {
     return (
-      this.allPossibleMoves().find(
-        ({ to }) => to.x === pos.x && to.y === pos.y
+      this.allAttackedPositions().find(
+        (target) => target.x === pos.x && target.y === pos.y
       ) !== undefined
     );
   }
@@ -182,31 +175,27 @@ export class State {
     this.board.forEachPiece((from, piece) => {
       if (this.isEnemy(piece)) return;
       // TODO review left king defendless
-      this.validMoves(from, true).forEach((to) => {
+      this.validMoves(from).forEach((to) => {
         possibleMoves.push({ from, to });
       });
     });
 
     return possibleMoves;
+  }
 
-    // return this.deprecatedBoard.reduce((acc, piece, indexedPos) => {
-    //   if (piece === "" || this.isEnemy(piece)) return acc;
-    //   const x = indexedPos % 8;
-    //   const y = (indexedPos - x) / 8;
-    //   acc = [
-    //     ...acc,
-    //     ...this.validMoves({ x, y }, true).map((to) => ({
-    //       from: { x, y },
-    //       to,
-    //     })),
-    //   ];
-    //   return acc;
-    // }, [] as { from: Position; to: Position }[]);
+  allAttackedPositions() {
+    const attackedPositions: Position[] = [];
+    this.board.forEachPiece((from, piece) => {
+      if (this.isEnemy(piece)) return;
+      this.attackedPositions(piece, from).forEach((pos) =>
+        attackedPositions.push(pos)
+      );
+    });
+    return attackedPositions;
   }
 
   inCheck() {
     const hypotheticalNoMove = new State(
-      this.deprecatedBoard,
       this.board.clone(),
       this.turn === "black" ? "white" : "black",
       null,
@@ -234,13 +223,140 @@ export class State {
     );
   }
 
-  validMoves(from: Position, allowKingDefenceless: boolean): Position[] {
+  attackedPositions(piece: Piece, from: Position): Position[] {
+    const attackedPositions: Position[] = [];
+    if (piece === "♟" || piece === "♙") {
+      const dir = piece === "♟" ? 1 : -1;
+      attackedPositions.push({ x: from.x, y: from.y + dir });
+    }
+
+    if (piece === "♜" || piece === "♖") {
+      // prettier-ignore
+      const vectors = [
+        [-1,  0],
+        [ 0, -1],
+        [ 0,  1],
+        [ 1,  0], 
+      ]
+
+      for (let vector of vectors) {
+        for (
+          let x = from.x + vector[0], y = from.y + vector[1];
+          x >= 0 && x <= 7 && y >= 0 && y <= 7;
+          x += vector[0], y += vector[1]
+        ) {
+          const piece = this.pieceAt({ x, y });
+          attackedPositions.push({ x, y });
+          if (piece) {
+            break;
+          }
+        }
+      }
+    }
+
+    if (piece === "♞" || piece === "♘") {
+      attackedPositions.push({ x: from.x + 1, y: from.y - 2 });
+      attackedPositions.push({ x: from.x - 1, y: from.y + 2 });
+      attackedPositions.push({ x: from.x - 1, y: from.y - 2 });
+      attackedPositions.push({ x: from.x + 1, y: from.y + 2 });
+      attackedPositions.push({ x: from.x - 2, y: from.y - 1 });
+      attackedPositions.push({ x: from.x + 2, y: from.y - 1 });
+      attackedPositions.push({ x: from.x - 2, y: from.y + 1 });
+      attackedPositions.push({ x: from.x + 2, y: from.y + 1 });
+    }
+
+    if (piece === "♝" || piece === "♗") {
+      // prettier-ignore
+      const vectors = [
+        [-1, -1],
+        [ 1, -1], 
+        [-1,  1],
+        [ 1,  1]
+      ]
+
+      for (let vector of vectors) {
+        for (
+          let x = from.x + vector[0], y = from.y + vector[1];
+          x >= 0 && x <= 7 && y >= 0 && y <= 7;
+          x += vector[0], y += vector[1]
+        ) {
+          const piece = this.pieceAt({ x, y });
+          attackedPositions.push({ x, y });
+          if (piece) {
+            break;
+          }
+        }
+      }
+    }
+
+    if (piece === "♛" || piece === "♕") {
+      // prettier-ignore
+      const vectors = [
+        [-1, -1],
+        [-1,  0],
+        [-1,  1],
+        [ 0, -1],
+        [ 0,  1],
+        [ 1, -1], 
+        [ 1,  0], 
+        [ 1,  1]
+      ]
+
+      for (let vector of vectors) {
+        for (
+          let x = from.x + vector[0], y = from.y + vector[1];
+          x >= 0 && x <= 7 && y >= 0 && y <= 7;
+          x += vector[0], y += vector[1]
+        ) {
+          const piece = this.pieceAt({ x, y });
+          attackedPositions.push({ x, y });
+          if (piece) {
+            break;
+          }
+        }
+      }
+    }
+
+    if (piece === "♚" || piece === "♔") {
+      // prettier-ignore
+      const vectors = [
+        [-1, -1],
+        [-1,  0],
+        [-1,  1],
+        [ 0, -1],
+        [ 0,  1],
+        [ 1, -1], 
+        [ 1,  0], 
+        [ 1,  1]
+      ]
+
+      for (let vector of vectors) {
+        for (
+          let x = from.x + vector[0], y = from.y + vector[1];
+          x >= 0 && x <= 7 && y >= 0 && y <= 7;
+          x += vector[0], y += vector[1]
+        ) {
+          const piece = this.pieceAt({ x, y });
+          attackedPositions.push({ x, y });
+          if (piece) {
+            break;
+          }
+        }
+      }
+    }
+
+    return attackedPositions;
+  }
+
+  validMoves(from: Position): Position[] {
     const piece = this.pieceAt(from);
     const moves: Position[] = [];
 
-    if (!piece || this.isEnemy(piece)) {
-      console.error("Attempt to move a non-existing piece");
-      //throw new Error("Attempt to move invalid piece");
+    if (!piece) {
+      throw new Error("Attempt to move invalid piece");
+    }
+
+    if (this.isEnemy(piece)) {
       return [];
     }
 
@@ -440,7 +556,6 @@ export class State {
       }
 
       const hypotheticalNoMove = new State(
-        this.deprecatedBoard,
         this.board,
         this.turn === "black" ? "white" : "black",
         null,
@@ -482,10 +597,7 @@ export class State {
     // Filter moves out of the board
     return moves
       .filter((to) => to.x >= 0 && to.x <= 7 && to.y >= 0 && to.y <= 7)
-      .filter(
-        (to) =>
-          allowKingDefenceless || !this.move(from, to).canCaptureEnemyKing()
-      );
+      .filter((to) => !this.move(from, to).canCaptureEnemyKing());
   }
 
   score() {
