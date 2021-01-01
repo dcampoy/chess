@@ -10,6 +10,16 @@ export const initial =
   "♙♙♙♙♙♙♙♙" +
   "♖♘♗♕♔♗♘♖";
 
+export const rookKing =
+  "    ♚   " +
+  "        " +
+  "   ♔ ♖  " +
+  "        " +
+  "        " +
+  "        " +
+  "        " +
+  "        ";
+
 export class Board {
   private pieceList: (Piece | null)[];
 

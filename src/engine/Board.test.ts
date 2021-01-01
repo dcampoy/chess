@@ -1,4 +1,4 @@
-import { Board, initial } from "./Board";
+import { Board, initial, rookKing } from "./Board";
 
 test("happy case", () => {
   const board = new Board(initial);
@@ -43,16 +43,6 @@ test("clone board", () => {
 });
 
 test("iterate the pieces using forEachPiece", () => {
-  const rookKing =
-    "        " +
-    "   ♚    " +
-    "        " +
-    "     ♖  " +
-    "        " +
-    "  ♔     " +
-    "        " +
-    "        ";
-
   const callback = jest.fn();
   const board = new Board(rookKing);
   board.forEachPiece(callback);

@@ -16,14 +16,45 @@ export const blackPieces = ["♟", "♜", "♞", "♝", "♛", "♚"] as const;
 
 export const whitePieces = ["♙", "♖", "♘", "♗", "♕", "♔"] as const;
 
+// const stateCache = new Map<String, State>(
+// window.stateCache = stateCache;
+
+const allPosibleMovesCache = new WeakMap<State, Move[]>();
+
 export class State {
+  public stateCacheKey: String;
+
   constructor(
     public board: Board,
     public turn: "white" | "black",
     public enPassant: Position | null,
     public rightCastlingPossible: boolean,
     public leftCastlingPossible: boolean
-  ) {}
+  ) {
+    this.stateCacheKey = this.buildStateKey(
+      board,
+      turn,
+      enPassant,
+      rightCastlingPossible,
+      leftCastlingPossible
+    );
+    // stateCache.set(this.stateCacheKey, this);
+  }
+
+  private buildStateKey(
+    board: Board,
+    turn: "white" | "black",
+    enPassant: Position | null,
+    rightCastlingPossible: boolean,
+    leftCastlingPossible: boolean
+  ) {
+    return (
+      board.export() +
+      `${turn} ${enPassant?.x || "-"},${enPassant?.x || "-"} ${
+        leftCastlingPossible ? "l" : "-"
+      } ${rightCastlingPossible ? "r" : "-"}`
+    );
+  }
 
   private pieceAt(pos: Position): Piece | null {
     return this.board.get(pos);
@@ -41,7 +72,6 @@ export class State {
     if (!movedPiece) {
       console.error("Attempt to move a non-existing piece");
       return this;
-      // throw new Error("Attempt to move a non-existing piece");
     }
 
     // Detecting en-passant
@@ -66,7 +96,6 @@ export class State {
       to.y === this.enPassant.y
     ) {
       board.clear({ x: to.x, y: to.y - 1 });
-      // board[(to.y - 1) * 8 + to.x] = "";
     }
     if (
       movedPiece === "♙" &&
@@ -74,18 +103,15 @@ export class State {
       to.y === this.enPassant.y
     ) {
       board.clear({ x: to.x, y: to.y + 1 });
-      // board[(to.y + 1) * 8 + to.x] = "";
     }
 
     // Pawn to Queen
     if (movedPiece === "♟" && to.y === 7) {
       board.set(to, "♛");
-      // board[to.y * 8 + to.x] = "♛";
     }
 
     if (movedPiece === "♙" && to.y === 0) {
       board.set(to, "♕");
-      // board[to.y * 8 + to.x] = "♕";
     }
 
     const castlingLine = this.turn === "black" ? 0 : 7;
@@ -99,8 +125,6 @@ export class State {
     ) {
       board.set({ x: 5, y: castlingLine }, this.turn === "black" ? "♜" : "♖");
       board.clear({ x: 7, y: castlingLine });
-      // board[castlingLine * 8 + 5] = board[castlingLine * 8 + 7];
-      // board[castlingLine * 8 + 7] = "";
     }
 
     if (
@@ -112,8 +136,6 @@ export class State {
     ) {
       board.set({ x: 3, y: castlingLine }, this.turn === "black" ? "♜" : "♖");
       board.clear({ x: 0, y: castlingLine });
-      // board[castlingLine * 8 + 3] = board[castlingLine * 8];
-      // board[castlingLine * 8] = "";
     }
 
     const rightCastlingPossible =
@@ -128,6 +150,27 @@ export class State {
 
     const turn = this.turn === "black" ? "white" : "black";
 
+    // const cachedState = stateCache.get(
+    //   this.buildStateKey(
+    //     board,
+    //     turn,
+    //     enPassant,
+    //     rightCastlingPossible,
+    //     leftCastlingPossible
+    //   )
+    // );
+
+    // if (cachedState) {
+    //   return cachedState;
+    // } else {
+    //   return new State(
+    //     board,
+    //     turn,
+    //     enPassant,
+    //     rightCastlingPossible,
+    //     leftCastlingPossible
+    //   );
+    // }
     return new State(
       board,
       turn,
@@ -153,24 +196,25 @@ export class State {
     }
   }
 
-  canAttackPosition(pos: Position) {
-    return (
-      this.allAttackedPositions().find(
-        (target) => target.x === pos.x && target.y === pos.y
-      ) !== undefined
-    );
-  }
-
   canCaptureEnemyKing() {
     const kingPiece = this.turn === "black" ? "♔" : "♚";
     const kingPos = this.find(
       (pos) => this.pieceAt(pos) === kingPiece
     ) as Position;
 
-    return this.canAttackPosition(kingPos);
+    return (
+      this.allAttackedPositionsByMe().find(
+        (target) => target.x === kingPos.x && target.y === kingPos.y
+      ) !== undefined
+    );
   }
 
   allPossibleMoves() {
+    const cachedMoves = allPosibleMovesCache.get(this);
+    if (cachedMoves) {
+      return cachedMoves;
+    }
+
     const possibleMoves: Move[] = [];
     this.board.forEachPiece((from, piece) => {
       if (this.isEnemy(piece)) return;
@@ -180,10 +224,12 @@ export class State {
       });
     });
 
+    allPosibleMovesCache.set(this, possibleMoves);
+
     return possibleMoves;
   }
 
-  allAttackedPositions() {
+  allAttackedPositionsByMe() {
     const attackedPositions: Position[] = [];
     this.board.forEachPiece((from, piece) => {
       if (this.isEnemy(piece)) return;
@@ -194,33 +240,36 @@ export class State {
     return attackedPositions;
   }
 
+  allAttackedPositionsByTheEnemy() {
+    const attackedPositions: Position[] = [];
+    this.board.forEachPiece((from, piece) => {
+      if (!this.isEnemy(piece)) return;
+      this.attackedPositions(piece, from).forEach((pos) =>
+        attackedPositions.push(pos)
+      );
+    });
+    return attackedPositions;
+  }
+
   inCheck() {
-    const hypotheticalNoMove = new State(
-      this.board.clone(),
-      this.turn === "black" ? "white" : "black",
-      null,
-      this.rightCastlingPossible,
-      this.leftCastlingPossible
+    const kingPiece = this.turn === "black" ? "♚" : "♔";
+    const kingPos = this.find(
+      (pos) => this.pieceAt(pos) === kingPiece
+    ) as Position;
+
+    return (
+      this.allAttackedPositionsByTheEnemy().find(
+        (target) => target.x === kingPos.x && target.y === kingPos.y
+      ) !== undefined
     );
-    return hypotheticalNoMove.canCaptureEnemyKing();
   }
 
   inCheckmate() {
-    return (
-      this.inCheck() &&
-      this.allPossibleMoves().find(
-        ({ from, to }) => !this.move(from, to).canCaptureEnemyKing()
-      ) === undefined
-    );
+    return this.inCheck() && this.allPossibleMoves().length === 0;
   }
 
   inStalemate() {
-    return (
-      !this.inCheck() &&
-      this.allPossibleMoves().find(
-        ({ from, to }) => !this.move(from, to).canCaptureEnemyKing()
-      ) === undefined
-    );
+    return !this.inCheck() && this.allPossibleMoves().length === 0;
   }
 
   attackedPositions(piece: Piece, from: Position): Position[] {
@@ -331,17 +380,9 @@ export class State {
       ]
 
       for (let vector of vectors) {
-        for (
-          let x = from.x + vector[0], y = from.y + vector[1];
-          x >= 0 && x <= 7 && y >= 0 && y <= 7;
-          x += vector[0], y += vector[1]
-        ) {
-          const piece = this.pieceAt({ x, y });
-          attackedPositions.push({ x, y });
-          if (piece) {
-            break;
-          }
-        }
+        const x = from.x + vector[0];
+        const y = from.y + vector[1];
+        attackedPositions.push({ x, y });
       }
     }
 
@@ -352,11 +393,7 @@ export class State {
     const piece = this.pieceAt(from);
     const moves: Position[] = [];
 
-    if (!piece) {
-      throw new Error("Attempt to move invalid piece");
-    }
-
-    if (this.isEnemy(piece)) {
+    if (!piece || this.isEnemy(piece)) {
       return [];
     }
 
@@ -555,14 +592,6 @@ export class State {
         }
       }
 
-      const hypotheticalNoMove = new State(
-        this.board,
-        this.turn === "black" ? "white" : "black",
-        null,
-        this.rightCastlingPossible,
-        this.leftCastlingPossible
-      );
-
       // Right castling
       const castlingRow = piece === "♚" ? 0 : 7;
       if (
@@ -571,9 +600,9 @@ export class State {
         from.y === castlingRow &&
         !this.pieceAt({ x: 5, y: castlingRow }) &&
         !this.pieceAt({ x: 6, y: castlingRow }) &&
-        !hypotheticalNoMove.canAttackPosition({ x: 4, y: castlingRow }) &&
-        !hypotheticalNoMove.canAttackPosition({ x: 5, y: castlingRow }) &&
-        !hypotheticalNoMove.canAttackPosition({ x: 6, y: castlingRow })
+        !this.allAttackedPositionsByTheEnemy().find(
+          (target) => [4, 5, 6].includes(target.x) && target.y === castlingRow
+        )
       ) {
         moves.push({ x: 6, y: castlingRow });
       }
@@ -586,18 +615,19 @@ export class State {
         !this.pieceAt({ x: 1, y: castlingRow }) &&
         !this.pieceAt({ x: 2, y: castlingRow }) &&
         !this.pieceAt({ x: 3, y: castlingRow }) &&
-        !hypotheticalNoMove.canAttackPosition({ x: 2, y: castlingRow }) &&
-        !hypotheticalNoMove.canAttackPosition({ x: 3, y: castlingRow }) &&
-        !hypotheticalNoMove.canAttackPosition({ x: 4, y: castlingRow })
+        !this.allAttackedPositionsByTheEnemy().find(
+          (target) => [2, 3, 4].includes(target.x) && target.y === castlingRow
+        )
       ) {
         moves.push({ x: 2, y: castlingRow });
       }
     }
 
-    // Filter moves out of the board
-    return moves
+    const validMoves = moves
       .filter((to) => to.x >= 0 && to.x <= 7 && to.y >= 0 && to.y <= 7)
       .filter((to) => !this.move(from, to).canCaptureEnemyKing());
+
+    return validMoves;
   }
 
   score() {

@@ -1,16 +1,28 @@
 import React, { useState } from "react";
-import { Board as BoardState, initial } from "../engine/Board";
+import { Board as BoardState, initial, rookKing } from "../engine/Board";
 import Engine from "../engine/Engine";
 import { Move, Position, State } from "../engine/State";
 import Cell from "./Cell";
 
-const initialState = new State(
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const rookKingState = new State(
+  new BoardState(rookKing),
+  "white",
+  null,
+  false,
+  false
+);
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const defaultState = new State(
   new BoardState(initial),
   "white",
   null,
   true,
   true
 );
+
+const initialState = rookKingState;
 
 function Board() {
   const [state, setState] = useState<State>(initialState);
