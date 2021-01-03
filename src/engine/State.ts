@@ -16,9 +16,6 @@ export const blackPieces = ["♟", "♜", "♞", "♝", "♛", "♚"] as const;
 
 export const whitePieces = ["♙", "♖", "♘", "♗", "♕", "♔"] as const;
 
-// const stateCache = new Map<String, State>(
-// window.stateCache = stateCache;
-
 const allPosibleMovesCache = new WeakMap<State, Move[]>();
 
 export class State {
@@ -38,7 +35,6 @@ export class State {
       rightCastlingPossible,
       leftCastlingPossible
     );
-    // stateCache.set(this.stateCacheKey, this);
   }
 
   private buildStateKey(
@@ -150,27 +146,6 @@ export class State {
 
     const turn = this.turn === "black" ? "white" : "black";
 
-    // const cachedState = stateCache.get(
-    //   this.buildStateKey(
-    //     board,
-    //     turn,
-    //     enPassant,
-    //     rightCastlingPossible,
-    //     leftCastlingPossible
-    //   )
-    // );
-
-    // if (cachedState) {
-    //   return cachedState;
-    // } else {
-    //   return new State(
-    //     board,
-    //     turn,
-    //     enPassant,
-    //     rightCastlingPossible,
-    //     leftCastlingPossible
-    //   );
-    // }
     return new State(
       board,
       turn,
@@ -198,9 +173,9 @@ export class State {
 
   canCaptureEnemyKing() {
     const kingPiece = this.turn === "black" ? "♔" : "♚";
-    const kingPos = this.find(
-      (pos) => this.pieceAt(pos) === kingPiece
-    ) as Position;
+    const kingPos = this.find((pos) => this.pieceAt(pos) === kingPiece);
+
+    if (!kingPos) throw new Error("Vive le republique!");
 
     return (
       this.allAttackedPositionsByMe().find(
@@ -218,7 +193,6 @@ export class State {
     const possibleMoves: Move[] = [];
     this.board.forEachPiece((from, piece) => {
       if (this.isEnemy(piece)) return;
-      // TODO review left king defendless
       this.validMoves(from).forEach((to) => {
         possibleMoves.push({ from, to });
       });
@@ -253,30 +227,48 @@ export class State {
 
   inCheck() {
     const kingPiece = this.turn === "black" ? "♚" : "♔";
-    const kingPos = this.find(
-      (pos) => this.pieceAt(pos) === kingPiece
-    ) as Position;
+    const kingPos = this.board.findPiece((_, piece) => piece === kingPiece);
 
     return (
       this.allAttackedPositionsByTheEnemy().find(
-        (target) => target.x === kingPos.x && target.y === kingPos.y
+        (target) => target.x === kingPos?.x && target.y === kingPos.y
       ) !== undefined
     );
   }
 
+  hasNoPossibleMoves() {
+    const canMoveAPawn =
+      this.board.findPiece((from, piece) => {
+        if (this.isEnemy(piece) || (piece !== "♟" && piece !== "♙"))
+          return false;
+        return this.validMoves(from).length > 0;
+      }) !== null;
+
+    if (canMoveAPawn) return false;
+
+    const canMoveAnyOtherPiece =
+      this.board.findPiece((from, piece) => {
+        if (this.isEnemy(piece) || piece === "♟" || piece === "♙") return false;
+        return this.validMoves(from).length > 0;
+      }) !== null;
+
+    return !canMoveAnyOtherPiece;
+  }
+
   inCheckmate() {
-    return this.inCheck() && this.allPossibleMoves().length === 0;
+    return this.inCheck() && this.hasNoPossibleMoves();
   }
 
   inStalemate() {
-    return !this.inCheck() && this.allPossibleMoves().length === 0;
+    return !this.inCheck() && this.hasNoPossibleMoves();
   }
 
   attackedPositions(piece: Piece, from: Position): Position[] {
     const attackedPositions: Position[] = [];
     if (piece === "♟" || piece === "♙") {
       const dir = piece === "♟" ? 1 : -1;
-      attackedPositions.push({ x: from.x, y: from.y + dir });
+      attackedPositions.push({ x: from.x - 1, y: from.y + dir });
+      attackedPositions.push({ x: from.x + 1, y: from.y + dir });
     }
 
     if (piece === "♜" || piece === "♖") {
@@ -404,7 +396,10 @@ export class State {
         moves.push({ x: from.x, y: from.y + dir });
       }
       if ((piece === "♟" && from.y === 1) || (piece === "♙" && from.y === 6)) {
-        if (!this.pieceAt({ x: from.x, y: from.y + 2 * dir })) {
+        if (
+          !this.pieceAt({ x: from.x, y: from.y + 1 * dir }) &&
+          !this.pieceAt({ x: from.x, y: from.y + 2 * dir })
+        ) {
           moves.push({ x: from.x, y: from.y + 2 * dir });
         }
       }
@@ -417,7 +412,7 @@ export class State {
 
       if (
         piece === "♟" &&
-        from.y === 5 &&
+        from.y === 4 &&
         this.enPassant &&
         (from.x === this.enPassant.x + 1 || from.x === this.enPassant.x - 1)
       ) {
@@ -632,17 +627,17 @@ export class State {
 
   score() {
     const capablanca: { [key: string]: number } = {
-      "♟": 1,
-      "♜": 5,
-      "♞": 3,
-      "♝": 3,
-      "♛": 9,
+      "♟": 10,
+      "♜": 50,
+      "♞": 30,
+      "♝": 30,
+      "♛": 90,
       "♚": 0,
-      "♙": 1,
-      "♖": 5,
-      "♘": 3,
-      "♗": 3,
-      "♕": 9,
+      "♙": 10,
+      "♖": 50,
+      "♘": 30,
+      "♗": 30,
+      "♕": 90,
       "♔": 0,
     };
 
@@ -662,11 +657,8 @@ export class State {
       score += this.isEnemy(piece) ? -capablanca[piece] : capablanca[piece];
     });
 
-    // const score = this.deprecatedBoard.reduce((acc, piece) => {
-    //   const value = capablanca[piece] || 0;
-    //   acc += this.isEnemy(piece) ? -value : value;
-    //   return acc;
-    // }, 0);
+    score += this.allAttackedPositionsByMe().length;
+    score -= this.allAttackedPositionsByTheEnemy().length;
 
     return score;
   }

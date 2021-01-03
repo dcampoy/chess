@@ -22,7 +22,7 @@ const defaultState = new State(
   true
 );
 
-const initialState = rookKingState;
+const initialState = defaultState;
 
 function Board() {
   const [state, setState] = useState<State>(initialState);

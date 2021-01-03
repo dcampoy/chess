@@ -72,4 +72,18 @@ export class Board {
       }
     }
   }
+
+  public findPiece(
+    callback: (pos: Position, piece: Piece) => boolean
+  ): Position | null {
+    for (let i = 0; i < 64; i++) {
+      const y = Math.floor(i / 8);
+      const x = i % 8;
+      const piece = this.pieceList[i];
+      if (piece !== null && callback({ x, y }, piece)) {
+        return { x, y };
+      }
+    }
+    return null;
+  }
 }
