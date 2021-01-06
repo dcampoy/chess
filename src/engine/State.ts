@@ -21,6 +21,9 @@ const allPosibleMovesCache = new WeakMap<State, Move[]>();
 export class State {
   public stateCacheKey: String;
 
+  private possibleMovesCache = new Map<Position, Position[]>();
+  private hasNoPossibleMovesCache: boolean | undefined;
+
   constructor(
     public board: Board,
     public turn: "white" | "black",
@@ -237,6 +240,10 @@ export class State {
   }
 
   hasNoPossibleMoves() {
+    if (this.hasNoPossibleMovesCache !== undefined) {
+      return this.hasNoPossibleMovesCache;
+    }
+
     const canMoveAPawn =
       this.board.findPiece((from, piece) => {
         if (this.isEnemy(piece) || (piece !== "♟" && piece !== "♙"))
@@ -252,6 +259,7 @@ export class State {
         return this.validMoves(from).length > 0;
       }) !== null;
 
+    this.hasNoPossibleMovesCache = !canMoveAnyOtherPiece;
     return !canMoveAnyOtherPiece;
   }
 
@@ -382,6 +390,10 @@ export class State {
   }
 
   validMoves(from: Position): Position[] {
+    const cachedValue = this.possibleMovesCache.get(from);
+    if (cachedValue !== undefined) {
+      return cachedValue;
+    }
     const piece = this.pieceAt(from);
     const moves: Position[] = [];
 
@@ -621,6 +633,8 @@ export class State {
     const validMoves = moves
       .filter((to) => to.x >= 0 && to.x <= 7 && to.y >= 0 && to.y <= 7)
       .filter((to) => !this.move(from, to).canCaptureEnemyKing());
+
+    this.possibleMovesCache.set(from, validMoves);
 
     return validMoves;
   }
