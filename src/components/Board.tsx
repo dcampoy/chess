@@ -1,5 +1,10 @@
 import React, { useState } from "react";
-import { Board as BoardState, initial, rookKing } from "../engine/Board";
+import {
+  Board as BoardState,
+  initial,
+  rookKing,
+  twoBishopKing,
+} from "../engine/Board";
 import Engine from "../engine/Engine";
 import { Move, Position, State } from "../engine/State";
 import Cell from "./Cell";
@@ -20,6 +25,15 @@ const defaultState = new State(
   null,
   true,
   true
+);
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const twoBishopKingState = new State(
+  new BoardState(twoBishopKing),
+  "white",
+  null,
+  false,
+  false
 );
 
 const initialState = defaultState;

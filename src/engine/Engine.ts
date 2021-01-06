@@ -50,15 +50,25 @@ class Engine {
     alpha: number | undefined,
     beta: number | undefined,
     plies: number
-  ) {
+  ): number {
+    // @ts-ignore
+    window.stats = window.stats || { calls: 0, hit: 0, miss: 0 };
+
+    // @ts-ignore
+    window.stats.calls++;
     const cachedScore = scoreCache.get(state.stateCacheKey);
     if (cachedScore && cachedScore[1] >= plies) {
+      // @ts-ignore
+      window.stats.hit++;
       return cachedScore[0];
     }
+    // @ts-ignore
+    window.stats.miss++;
 
     if (plies === 0 || state.inCheckmate() || state.inStalemate()) {
-      scoreCache.set(state.stateCacheKey, [-state.score() + plies, plies]);
-      return -state.score() + plies;
+      const score = -state.score() + plies;
+      scoreCache.set(state.stateCacheKey, [score, plies]);
+      return score;
     }
 
     let principalVariation = true;
@@ -67,10 +77,10 @@ class Engine {
       .allPossibleMoves()
       .map((move) => {
         const newState = state.move(move.from, move.to);
-        return [newState, newState.score()];
+        return [newState, -newState.score() + plies];
       });
 
-    possibleMoves.sort((a, b) => a[1] - b[1]);
+    possibleMoves.sort((a, b) => b[1] - a[1]);
 
     for (const [newState] of possibleMoves) {
       let score;
@@ -98,7 +108,14 @@ class Engine {
         }
       }
 
+      if (score >= 100000) {
+        // Checkmate
+        scoreCache.set(state.stateCacheKey, [-score, plies]);
+        return -score;
+      }
+
       if (beta !== undefined && score >= beta) {
+        scoreCache.set(state.stateCacheKey, [-beta, plies]);
         return -beta;
       }
 

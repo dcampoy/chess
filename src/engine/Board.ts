@@ -20,6 +20,16 @@ export const rookKing =
   "        " +
   "        ";
 
+export const twoBishopKing =
+  "    ♚   " +
+  "        " +
+  "   ♔    " +
+  "        " +
+  "        " +
+  "  ♗♗    " +
+  "        " +
+  "        ";
+
 export class Board {
   private pieceList: (Piece | null)[];
 
